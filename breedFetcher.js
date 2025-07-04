@@ -1,35 +1,31 @@
+// breedFetcher.js
 const needle = require('needle');
-console.log("needle loaded successfully!");
 
-// Function to grab the breed name from command line arguments
-function getBreedName() {
-  const args = process.argv.slice(2);
-  if (args.length === 0) {
-    console.error("Please provide a breed name as an argument.");
-    process.exit(1);
-  }
-  return args[0];
-}
+const fetchBreedDescription = function(breedName, callback) {
+  const API_URL = `https://api.thecatapi.com/v1/breeds/search?q=${breedName}`;
 
-// Call getBreedName to retrieve the breed name
-const breedName = getBreedName();
+  needle.get(API_URL, (error, response) => {
+    if (error) {
+      callback(error, null); // error case
+      return;
+    }
 
-// API endpoint for fetching breed information
-const API_URL = 'https://api.thecatapi.com/v1/breeds/search?q=${breedName}';
+    if (response.statusCode !== 200) {
+      callback(`Status Code: ${response.statusCode}`, null); // non-200 status
+      return;
+    }
 
-// Function to get url for failing
-needle.get(API_URL, (error, response) => {
-  if (error) {
-    console.error("Error fetching data:", error);
-    return;
-  }
-  if (response.statusCode !== 200) {
-    console.error("Failed to fetch data. Status code:", response.statusCode);
-    return;
-  }
+    const data = response.body;
 
-  const breeds = response.body;
-  if (breeds.length === 0) {
-    console.log("No breeds found.");
-    return;
-  }});
+    if (data.length === 0) {
+      callback("Breed not found.", null); // breed not found
+      return;
+    }
+
+    const breed = data[0];
+    callback(null, breed.description); // success
+  });
+};
+
+// Export the function
+module.exports = { fetchBreedDescription };
